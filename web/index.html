@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APK Security Studio — Android Reverse Engineering IDE</title>
+  <meta name="description" content="Professional web-based Android APK reverse engineering IDE with AI-powered security analysis, automated patching, and decompilation tools." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ── LOADING SCREEN ──────────────────────────────────────────────── -->
+<div id="loading-screen" class="loading-screen">
+  <div class="loading-logo">
+    <div class="loading-icon">
+      <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="30" stroke="url(#lg1)" stroke-width="2"/>
+        <path d="M20 32 L28 24 L28 40 Z" fill="#7c3aed"/>
+        <path d="M44 32 L36 24 L36 40 Z" fill="#06b6d4"/>
+        <path d="M26 32 L38 32" stroke="url(#lg2)" stroke-width="2" stroke-linecap="round"/>
+        <defs>
+          <linearGradient id="lg1" x1="0" y1="0" x2="64" y2="64">
+            <stop offset="0%" stop-color="#7c3aed"/>
+            <stop offset="100%" stop-color="#06b6d4"/>
+          </linearGradient>
+          <linearGradient id="lg2" x1="26" y1="32" x2="38" y2="32">
+            <stop offset="0%" stop-color="#7c3aed"/>
+            <stop offset="100%" stop-color="#06b6d4"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+    <h1>APK Security Studio</h1>
+    <p>Initializing workspace...</p>
+    <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ────────────────────────────────────────────────────── -->
+<div id="app" class="app hidden">
+
+  <!-- TOOLBAR -->
+  <header class="toolbar" id="toolbar">
+    <div class="toolbar-left">
+      <div class="app-logo">
+        <svg width="28" height="28" viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="30" stroke="url(#tlg1)" stroke-width="2"/>
+          <path d="M20 32 L28 24 L28 40 Z" fill="#7c3aed"/>
+          <path d="M44 32 L36 24 L36 40 Z" fill="#06b6d4"/>
+          <path d="M26 32 L38 32" stroke="url(#tlg2)" stroke-width="2" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="tlg1" x1="0" y1="0" x2="64" y2="64">
+              <stop offset="0%" stop-color="#7c3aed"/>
+              <stop offset="100%" stop-color="#06b6d4"/>
+            </linearGradient>
+            <linearGradient id="tlg2" x1="26" y1="32" x2="38" y2="32">
+              <stop offset="0%" stop-color="#7c3aed"/>
+              <stop offset="100%" stop-color="#06b6d4"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="app-name">APK Security Studio</span>
+        <span class="app-version">v1.0</span>
+      </div>
+      <div class="toolbar-sep"></div>
+      <div class="toolbar-actions">
+        <button id="btn-import" class="tb-btn tb-btn-primary" title="Import APK (Ctrl+O)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import APK
+        </button>
+        <button id="btn-scan" class="tb-btn" title="Security Scan" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Scan
+        </button>
+        <button id="btn-build" class="tb-btn tb-btn-success" title="Build APK" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Build APK
+        </button>
+        <button id="btn-save-file" class="tb-btn" title="Save Current File (Ctrl+S)" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save
+        </button>
+      </div>
+    </div>
+
+    <div class="toolbar-center">
+      <div class="project-breadcrumb" id="project-breadcrumb">
+        <span class="breadcrumb-item dim">No project open</span>
+      </div>
+    </div>
+
+    <div class="toolbar-right">
+      <div class="status-chips">
+        <div class="status-chip" id="chip-tools" title="Tool availability">
+          <div class="status-dot dot-checking"></div>
+          <span>Tools</span>
+        </div>
+        <div class="status-chip" id="chip-ai" title="AI connection">
+          <div class="status-dot dot-checking"></div>
+          <span>AI</span>
+        </div>
+      </div>
+      <button class="tb-btn tb-btn-icon" id="btn-settings" title="Settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- THREE-PANEL WORKSPACE -->
+  <div class="workspace" id="workspace">
+
+    <!-- LEFT: PROJECT TREE -->
+    <aside class="panel panel-left" id="panel-left">
+      <div class="panel-header">
+        <span class="panel-title">PROJECT</span>
+        <div class="panel-header-actions">
+          <button class="icon-btn" id="btn-refresh-tree" title="Refresh tree">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+          </button>
+          <button class="icon-btn" id="btn-collapse-tree" title="Collapse all">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 6 4 2 8 2"/><polyline points="20 6 20 2 16 2"/><polyline points="4 18 4 22 8 22"/><polyline points="20 18 20 22 16 22"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Drop zone / welcome -->
+      <div id="drop-zone" class="drop-zone">
+        <div class="drop-zone-content">
+          <div class="drop-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <p class="drop-title">Drop APK Here</p>
+          <p class="drop-sub">or click Import APK above</p>
+          <div class="drop-formats">.apk</div>
+        </div>
+      </div>
+
+      <!-- File tree (hidden until project loaded) -->
+      <div id="file-tree" class="file-tree hidden"></div>
+
+      <!-- APK info panel -->
+      <div id="apk-info" class="apk-info hidden">
+        <div class="apk-info-row">
+          <span class="apk-info-key">Package</span>
+          <span class="apk-info-val" id="info-package">—</span>
+        </div>
+        <div class="apk-info-row">
+          <span class="apk-info-key">Version</span>
+          <span class="apk-info-val" id="info-version">—</span>
+        </div>
+        <div class="apk-info-row">
+          <span class="apk-info-key">Target SDK</span>
+          <span class="apk-info-val" id="info-sdk">—</span>
+        </div>
+        <div class="apk-info-row warn" id="info-debuggable" style="display:none">
+          <span class="badge badge-warn">Debuggable</span>
+        </div>
+        <div class="apk-info-row warn" id="info-cleartext" style="display:none">
+          <span class="badge badge-warn">Cleartext Traffic</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- LEFT RESIZE HANDLE -->
+    <div class="resize-handle resize-handle-left" id="resize-left"></div>
+
+    <!-- CENTER: CODE EDITOR -->
+    <main class="panel panel-center" id="panel-center">
+      <div class="editor-tabs" id="editor-tabs">
+        <div class="editor-welcome" id="editor-welcome">
+          <div class="welcome-content">
+            <div class="welcome-logo">
+              <svg width="80" height="80" viewBox="0 0 64 64" fill="none">
+                <circle cx="32" cy="32" r="30" stroke="url(#wlg1)" stroke-width="1.5" stroke-dasharray="4 2"/>
+                <path d="M20 32 L28 24 L28 40 Z" fill="#7c3aed" opacity="0.9"/>
+                <path d="M44 32 L36 24 L36 40 Z" fill="#06b6d4" opacity="0.9"/>
+                <path d="M26 32 L38 32" stroke="url(#wlg2)" stroke-width="2" stroke-linecap="round"/>
+                <defs>
+                  <linearGradient id="wlg1" x1="0" y1="0" x2="64" y2="64">
+                    <stop offset="0%" stop-color="#7c3aed"/>
+                    <stop offset="100%" stop-color="#06b6d4"/>
+                  </linearGradient>
+                  <linearGradient id="wlg2" x1="26" y1="32" x2="38" y2="32">
+                    <stop offset="0%" stop-color="#7c3aed"/>
+                    <stop offset="100%" stop-color="#06b6d4"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <h2>APK Security Studio</h2>
+            <p>Professional Android Security Research Platform</p>
+            <div class="welcome-shortcuts">
+              <div class="shortcut-item">
+                <kbd>Ctrl+O</kbd>
+                <span>Import APK</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>Ctrl+S</kbd>
+                <span>Save File</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>F5</kbd>
+                <span>Security Scan</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>F6</kbd>
+                <span>Build APK</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-bar" id="tab-bar"></div>
+      </div>
+      <div id="monaco-editor" class="monaco-container"></div>
+
+      <!-- Context menu -->
+      <div id="context-menu" class="context-menu hidden">
+        <div class="ctx-item" data-action="patch-true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Patch method → return true
+        </div>
+        <div class="ctx-item" data-action="patch-false">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Patch method → return false
+        </div>
+        <div class="ctx-item" data-action="nop-block">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+          NOP this check block
+        </div>
+        <div class="ctx-sep"></div>
+        <div class="ctx-item" data-action="gen-frida">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Generate Frida hook
+        </div>
+        <div class="ctx-item" data-action="add-log">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Add log to method
+        </div>
+        <div class="ctx-item" data-action="ask-ai">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e879f9" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Ask AI about this
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT RESIZE HANDLE -->
+    <div class="resize-handle resize-handle-right" id="resize-right"></div>
+
+    <!-- RIGHT: AI AGENT PANEL -->
+    <aside class="panel panel-right" id="panel-right">
+      <div class="panel-header">
+        <span class="panel-title">AI AGENT</span>
+        <div class="panel-header-actions">
+          <button class="icon-btn" id="btn-clear-chat" title="Clear chat">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- AI Settings -->
+      <div class="ai-settings" id="ai-settings">
+        <div class="ai-settings-row">
+          <select id="ai-provider" class="select-ctrl">
+            <option value="ollama">Ollama (Local)</option>
+            <option value="lm_studio">LM Studio</option>
+            <option value="gemini">Google Gemini</option>
+          </select>
+          <select id="ai-model" class="select-ctrl">
+            <option value="mistral">mistral</option>
+          </select>
+        </div>
+        <div class="ai-settings-row">
+          <input type="text" id="ai-url" class="input-ctrl" placeholder="Custom URL (optional)" />
+          <input type="password" id="ai-key" class="input-ctrl" placeholder="API Key" />
+        </div>
+        <button class="tb-btn" id="btn-refresh-models" style="width:100%;margin-top:4px">Refresh Models</button>
+      </div>
+
+      <!-- Findings Panel -->
+      <div class="findings-panel" id="findings-panel">
+        <div class="findings-header">
+          <span class="findings-title">Security Findings</span>
+          <span class="findings-badge" id="findings-badge">0</span>
+        </div>
+        <div class="findings-list" id="findings-list">
+          <div class="findings-empty">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span>Run Security Scan to see findings</span>
+          </div>
+        </div>
+
+        <!-- Action Buttons (show after scan) -->
+        <div class="action-buttons hidden" id="action-buttons">
+          <button class="action-btn action-btn-danger" id="ab-patch-all">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+            Patch All Automatically
+          </button>
+          <button class="action-btn action-btn-secondary" id="ab-review-each">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Review Each Finding
+          </button>
+          <button class="action-btn action-btn-purple" id="ab-gen-frida">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Generate Frida Script
+          </button>
+          <button class="action-btn action-btn-blue" id="ab-ai-analyze">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            AI Deep Analysis
+          </button>
+        </div>
+      </div>
+
+      <!-- Chat Interface -->
+      <div class="chat-panel" id="chat-panel">
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-msg chat-msg-system">
+            <div class="chat-bubble">
+              👋 Welcome to APK Security Studio. Import an APK to begin analysis. I'll help identify security controls and suggest patches.
+            </div>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="chat-input" class="chat-input" placeholder="Ask about the APK..." />
+          <button class="send-btn" id="btn-send-chat">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- CONSOLE STRIP -->
+  <div class="console-strip" id="console-strip">
+    <div class="console-header">
+      <div class="console-tabs">
+        <button class="console-tab active" data-tab="output">OUTPUT</button>
+        <button class="console-tab" data-tab="frida">FRIDA SCRIPT</button>
+        <button class="console-tab" data-tab="diff">DIFF VIEW</button>
+      </div>
+      <div class="console-actions">
+        <button class="icon-btn" id="btn-clear-console" title="Clear console">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+        </button>
+        <button class="icon-btn" id="btn-toggle-console" title="Toggle console">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="console-body" id="console-body">
+      <div class="console-pane active" id="pane-output">
+        <div class="console-output" id="console-output">
+          <div class="console-line console-info">[APK Security Studio] Ready. Import an APK to begin.</div>
+        </div>
+      </div>
+      <div class="console-pane" id="pane-frida">
+        <div class="console-output" id="frida-output">
+          <div class="console-line console-dim">// No Frida script generated yet. Run security scan and click "Generate Frida Script".</div>
+        </div>
+        <button class="copy-btn" id="btn-copy-frida">Copy Script</button>
+      </div>
+      <div class="console-pane" id="pane-diff">
+        <div class="diff-container" id="diff-output">
+          <div class="console-line console-dim">// No diff available yet. Apply a patch to see changes.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODALS ──────────────────────────────────────────────────────── -->
+
+<!-- Settings Modal -->
+<div id="modal-settings" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Settings</h3>
+      <button class="modal-close" data-modal="settings">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-section">
+        <h4>AI Configuration</h4>
+        <label>Provider</label>
+        <select id="settings-provider" class="select-ctrl" style="width:100%;margin-bottom:8px">
+          <option value="ollama">Ollama (Local)</option>
+          <option value="lm_studio">LM Studio</option>
+          <option value="gemini">Google Gemini</option>
+        </select>
+        <label>Model</label>
+        <input type="text" id="settings-model" class="input-ctrl" style="width:100%;margin-bottom:8px" placeholder="e.g. mistral, llama3" />
+        <label>API Key / Custom URL</label>
+        <input type="password" id="settings-key" class="input-ctrl" style="width:100%;margin-bottom:8px" placeholder="Leave empty for local" />
+      </div>
+      <div class="settings-section">
+        <h4>Build Options</h4>
+        <label class="checkbox-label">
+          <input type="checkbox" id="opt-auto-sign" checked />
+          <span>Auto-sign APK after build</span>
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="opt-auto-scan" checked />
+          <span>Auto-scan after decode</span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="tb-btn tb-btn-primary" id="btn-save-settings">Save Settings</button>
+      <button class="tb-btn" data-modal="settings" id="btn-cancel-settings">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Patch Confirm Modal -->
+<div id="modal-patch" class="modal-overlay hidden">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <h3 id="patch-modal-title">Patch Preview</h3>
+      <button class="modal-close" data-modal="patch">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="patch-modal-desc" class="modal-desc"></p>
+      <div class="diff-viewer" id="patch-diff-viewer"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="tb-btn tb-btn-danger" id="btn-confirm-patch">Apply Patch</button>
+      <button class="tb-btn" data-modal="patch">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Frida Modal -->
+<div id="modal-frida" class="modal-overlay hidden">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <h3>Frida Hook Generator</h3>
+      <button class="modal-close" data-modal="frida">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="frida-form">
+        <div class="form-row">
+          <label>Class Name (dot notation)</label>
+          <input type="text" id="frida-class" class="input-ctrl" style="width:100%" placeholder="com.example.app.SecurityManager" />
+        </div>
+        <div class="form-row">
+          <label>Method Name</label>
+          <input type="text" id="frida-method" class="input-ctrl" style="width:100%" placeholder="isRooted" />
+        </div>
+        <div class="form-row">
+          <label>Return Value</label>
+          <select id="frida-return" class="select-ctrl" style="width:100%">
+            <option value="false">false (boolean)</option>
+            <option value="true">true (boolean)</option>
+            <option value="0">0 (int)</option>
+            <option value="1">1 (int)</option>
+            <option value="null">null</option>
+          </select>
+        </div>
+        <button class="tb-btn tb-btn-primary" id="btn-gen-frida-custom" style="width:100%;margin-top:8px">Generate Hook</button>
+        <pre id="frida-output-modal" class="frida-script-box">// Hook will appear here</pre>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="tb-btn tb-btn-primary" id="btn-copy-frida-modal">Copy to Clipboard</button>
+      <button class="tb-btn" id="btn-send-to-console-frida">Send to Frida Console</button>
+      <button class="tb-btn" data-modal="frida">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden file input -->
+<input type="file" id="file-input" accept=".apk" style="display:none" />
+
+<!-- Toast container -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- Socket.IO must load BEFORE Monaco to avoid AMD conflict -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<!-- Monaco CDN (defines AMD loader - load after socket.io) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+<!-- App Scripts -->
+<script src="api.js"></script>
+<script src="monaco-setup.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

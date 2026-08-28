@@ -1,0 +1,7 @@
+java -jar apktool_2.12.1.jar decode myapp.apk
+java -jar apktool_2.12.1.jar build myapp
+java -jar apktool_2.12.1.jar empty-framework-dir
+
+
+keytool -genkey -v -keystore my-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias my-key-alias
+jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore my-release-key.jks myapp/dist/myapp.apk my-key-alias

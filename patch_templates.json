@@ -1,0 +1,205 @@
+{
+  "version": "1.0.0",
+  "categories": {
+    "root_detection": {
+      "label": "Root Detection Bypass",
+      "severity": "high",
+      "color": "#ff4757",
+      "templates": {
+        "build_tags_bypass": {
+          "id": "build_tags_bypass",
+          "label": "Spoof Build.TAGS",
+          "description": "Forces Build.TAGS to return 'release-keys' instead of 'test-keys'",
+          "target_pattern": "iget-object.*android/os/Build;->TAGS",
+          "target_pattern_flags": "i",
+          "patch_strategy": "smali_replace",
+          "smali_match": "android/os/Build;->TAGS:Ljava/lang/String;",
+          "smali_replacement": "# Build.TAGS patched by APK Security Studio\n    const-string {reg}, \"release-keys\"",
+          "confidence": "high"
+        },
+        "build_fingerprint_bypass": {
+          "id": "build_fingerprint_bypass",
+          "label": "Spoof Build.FINGERPRINT",
+          "description": "Forces Build.FINGERPRINT to not contain 'generic' or 'unknown'",
+          "target_pattern": "android/os/Build;->FINGERPRINT",
+          "patch_strategy": "smali_replace",
+          "smali_match": "android/os/Build;->FINGERPRINT:Ljava/lang/String;",
+          "smali_replacement": "# Build.FINGERPRINT patched\n    const-string {reg}, \"google/walleye/walleye:8.1.0/OPM1.171019.011/4448085:user/release-keys\"",
+          "confidence": "high"
+        },
+        "su_binary_check_bypass": {
+          "id": "su_binary_check_bypass",
+          "label": "Bypass su Binary Checks",
+          "description": "Makes File.exists() return false for su paths",
+          "target_pattern": "\\/system\\/bin\\/su|\\/sbin\\/su|\\/system\\/xbin\\/su|\\/su\\/bin\\/su",
+          "patch_strategy": "force_method_return_false",
+          "target_method_pattern": "(checkForBinary|checkSuExists|findBinary|isRooted)",
+          "replacement_smali": ".registers 2\n    const/4 v0, 0x0\n    return v0",
+          "confidence": "high"
+        },
+        "rootbeer_bypass": {
+          "id": "rootbeer_bypass",
+          "label": "Bypass RootBeer Library",
+          "description": "Hooks all RootBeer detection methods to return false",
+          "target_pattern": "Lcom/scottyab/rootbeer/RootBeer;",
+          "patch_strategy": "override_class_methods",
+          "target_class": "com/scottyab/rootbeer/RootBeer",
+          "target_methods": ["isRooted", "isRootedWithoutBusyBoxCheck", "checkForBinary", "checkForSuBinary", "checkSuExists", "checkForRWSystem", "checkForRootNative", "checkForMagiskBinary"],
+          "replacement_smali": ".registers 2\n    const/4 v0, 0x0\n    return v0",
+          "confidence": "high"
+        },
+        "superuser_apk_bypass": {
+          "id": "superuser_apk_bypass",
+          "label": "Bypass Superuser.apk Detection",
+          "description": "Prevents detection of Superuser.apk package",
+          "target_pattern": "com.noshufou.android.su|com.thirdparty.superuser|eu.chainfire.supersu|com.koushikdutta.superuser",
+          "patch_strategy": "force_method_return_false",
+          "target_method_pattern": "(detectRootManagementApps|checkForDangerousProps|checkSuperuserApk)",
+          "replacement_smali": ".registers 2\n    const/4 v0, 0x0\n    return v0",
+          "confidence": "medium"
+        },
+        "busybox_bypass": {
+          "id": "busybox_bypass",
+          "label": "Bypass Busybox Detection",
+          "description": "Prevents busybox binary detection",
+          "target_pattern": "busybox",
+          "patch_strategy": "force_method_return_false",
+          "target_method_pattern": "(checkForBusybox|detectBusybox)",
+          "replacement_smali": ".registers 2\n    const/4 v0, 0x0\n    return v0",
+          "confidence": "medium"
+        },
+        "xposed_bypass": {
+          "id": "xposed_bypass",
+          "label": "Bypass Xposed Detection",
+          "description": "Prevents Xposed framework detection",
+          "target_pattern": "de.robv.android.xposed|XposedBridge",
+          "patch_strategy": "force_method_return_false",
+          "target_method_pattern": "(isXposed|detectXposed|checkXposed)",
+          "replacement_smali": ".registers 2\n    const/4 v0, 0x0\n    return v0",
+          "confidence": "medium"
+        },
+        "native_root_bypass": {
+          "id": "native_root_bypass",
+          "label": "Bypass Native Root Checks (JNI)",
+          "description": "Patches JNI native root detection methods",
+          "target_pattern": "Java_.*_isRooted|Java_.*_checkRoot",
+          "patch_strategy": "frida_hook",
+          "frida_template": "native_root_hook",
+          "confidence": "low"
+        }
+      }
+    },
+    "license_verification": {
+      "label": "License Verification Bypass",
+      "severity": "high",
+      "color": "#ffa502",
+      "templates": {
+        "license_check_true": {
+          "id": "license_check_true",
+          "label": "Force License Valid",
+          "description": "Patches license check methods to always return true/licensed",
+          "target_pattern": "(checkLicense|verifyLicense|isLicensed|isPro|isPremium|hasPro|hasLicense|isFullVersion|isUnlocked|isPurchased)",
+          "patch_strategy": "force_method_return_true",
+          "replacement_smali_bool": ".registers 2\n    const/4 v0, 0x1\n    return v0",
+          "replacement_smali_int": ".registers 2\n    const/4 v0, 0x1\n    return v0",
+          "confidence": "high"
+        },
+        "signature_verify_bypass": {
+          "id": "signature_verify_bypass",
+          "label": "Bypass Signature Verification",
+          "description": "Hooks PackageManager.getPackageSignatures to return expected signature",
+          "target_pattern": "getPackageInfo|getPackageSignatures|checkSignature|verifySignature",
+          "patch_strategy": "frida_hook",
+          "frida_template": "signature_spoof_hook",
+          "confidence": "medium"
+        },
+        "in_app_billing_bypass": {
+          "id": "in_app_billing_bypass",
+          "label": "Bypass In-App Billing",
+          "description": "Spoofs purchase responses as successful",
+          "target_pattern": "IInAppBillingService|com.android.vending.billing|BillingClient",
+          "patch_strategy": "frida_hook",
+          "frida_template": "billing_bypass_hook",
+          "confidence": "medium"
+        },
+        "base64_pubkey_nullify": {
+          "id": "base64_pubkey_nullify",
+          "label": "Nullify License Public Key",
+          "description": "Replaces Base64 encoded license public keys with zeros",
+          "target_pattern": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ|-----BEGIN PUBLIC KEY-----|LicenseValidator",
+          "patch_strategy": "string_replace",
+          "replacement": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "confidence": "low"
+        },
+        "ad_removal": {
+          "id": "ad_removal",
+          "label": "Remove Advertisements",
+          "description": "NOPs out ad initialization and display methods",
+          "target_pattern": "(loadAd|showAd|initAd|displayAds|showInterstitial|showBanner|showRewarded|initAdMob|initFacebook)",
+          "patch_strategy": "force_method_return_void",
+          "replacement_smali": ".registers 1\n    return-void",
+          "confidence": "high"
+        }
+      }
+    },
+    "emulator_detection": {
+      "label": "Emulator Detection Bypass",
+      "severity": "medium",
+      "color": "#2ed573",
+      "templates": {
+        "build_model_bypass": {
+          "id": "build_model_bypass",
+          "label": "Spoof Build.MODEL",
+          "description": "Forces Build.MODEL to return a real device model",
+          "target_pattern": "android/os/Build;->MODEL",
+          "patch_strategy": "smali_replace",
+          "smali_match": "android/os/Build;->MODEL:Ljava/lang/String;",
+          "smali_replacement": "const-string {reg}, \"Pixel 6\"",
+          "confidence": "high"
+        },
+        "build_product_bypass": {
+          "id": "build_product_bypass",
+          "label": "Spoof Build.PRODUCT",
+          "description": "Forces Build.PRODUCT to not contain 'emulator' or 'sdk'",
+          "target_pattern": "android/os/Build;->PRODUCT",
+          "patch_strategy": "smali_replace",
+          "smali_match": "android/os/Build;->PRODUCT:Ljava/lang/String;",
+          "smali_replacement": "const-string {reg}, \"oriole\"",
+          "confidence": "high"
+        },
+        "telephony_imei_bypass": {
+          "id": "telephony_imei_bypass",
+          "label": "Spoof Device IMEI",
+          "description": "Returns a realistic IMEI instead of zeros/nulls",
+          "target_pattern": "getDeviceId|getImei|getTelephonyDeviceId",
+          "patch_strategy": "frida_hook",
+          "frida_template": "telephony_spoof_hook",
+          "confidence": "medium"
+        }
+      }
+    },
+    "ssl_pinning": {
+      "label": "SSL Pinning Bypass",
+      "severity": "medium",
+      "color": "#5352ed",
+      "templates": {
+        "ssl_pinning_universal": {
+          "id": "ssl_pinning_universal",
+          "label": "Universal SSL Pinning Bypass",
+          "description": "Bypasses OkHttp, Conscrypt, TrustManager SSL certificate pinning",
+          "target_pattern": "CertificatePinner|X509TrustManager|checkServerTrusted|OkHttpClient",
+          "patch_strategy": "frida_hook",
+          "frida_template": "ssl_pinning_hook",
+          "confidence": "high"
+        }
+      }
+    }
+  },
+  "frida_templates": {
+    "native_root_hook": "Java.perform(function() {\n  try {\n    var System = Java.use('java.lang.System');\n    var Runtime = Java.use('java.lang.Runtime');\n    var ProcessBuilder = Java.use('java.lang.ProcessBuilder');\n    Runtime.exec.overload('[Ljava.lang.String;').implementation = function(cmd) {\n      if (cmd.toString().indexOf('su') !== -1) {\n        console.log('[APKStudio] Blocked native su check');\n        throw Java.use('java.io.IOException').$new('Permission denied');\n      }\n      return this.exec(cmd);\n    };\n  } catch(e) { console.log('[APKStudio] native_root_hook: ' + e); }\n});",
+    "signature_spoof_hook": "Java.perform(function() {\n  var PackageManager = Java.use('android.app.ApplicationPackageManager');\n  PackageManager.getPackageInfo.overload('java.lang.String', 'int').implementation = function(pkg, flags) {\n    var info = this.getPackageInfo(pkg, flags);\n    if ((flags & 64) !== 0) {\n      console.log('[APKStudio] Spoofing signature for: ' + pkg);\n    }\n    return info;\n  };\n});",
+    "billing_bypass_hook": "Java.perform(function() {\n  console.log('[APKStudio] Billing bypass hook active');\n  try {\n    var BillingClient = Java.use('com.android.billingclient.api.BillingClient');\n    console.log('[APKStudio] BillingClient found, monitoring...');\n  } catch(e) {}\n});",
+    "telephony_spoof_hook": "Java.perform(function() {\n  var TelephonyManager = Java.use('android.telephony.TelephonyManager');\n  TelephonyManager.getDeviceId.overload().implementation = function() {\n    console.log('[APKStudio] Spoofing IMEI');\n    return '351756051523999';\n  };\n  TelephonyManager.getLine1Number.overload().implementation = function() {\n    return '+12025551234';\n  };\n});",
+    "ssl_pinning_hook": "Java.perform(function() {\n  // TrustManager bypass\n  var TrustManager = Java.registerClass({\n    name: 'com.apkstudio.TrustAll',\n    implements: [Java.use('javax.net.ssl.X509TrustManager')],\n    methods: {\n      checkClientTrusted: function(chain, authType) {},\n      checkServerTrusted: function(chain, authType) {},\n      getAcceptedIssuers: function() { return []; }\n    }\n  });\n  // OkHttp CertificatePinner bypass\n  try {\n    var CertificatePinner = Java.use('okhttp3.CertificatePinner');\n    CertificatePinner.check.overload('java.lang.String', 'java.util.List').implementation = function(host, certs) {\n      console.log('[APKStudio] SSL pin bypassed for: ' + host);\n    };\n  } catch(e) { console.log('[APKStudio] OkHttp not found: ' + e); }\n});"
+  }
+}

@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# APK analysis output (generated at runtime)
+apk_analysis_output/
+
+# APK files (don't track large binaries)
+*.apk
+
+# Keystores (sensitive)
+*.jks
+*.keystore
+debug.keystore
+
+# OS files
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Logs
+*.log
+
+# Gemini / Antigravity
+.gemini/
+.agents/
